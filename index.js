@@ -65,6 +65,7 @@ async function run() {
         const servicesCollection = client.db('nusrat').collection("services");
         const experienceCollection = client.db('nusrat').collection("experience");
         const portfolioCollection = client.db('nusrat').collection("portfolio");
+        const ReviewCollection = client.db('nusrat').collection("review");
 
 
         app.post('/jwt', async (req, res) => {
@@ -294,6 +295,38 @@ async function run() {
             }
         });
 
+        app.post('/addreview', verifyToken, verifyAdmin, async (req, res) => {
+            const data = req.body;
+            const result = await ReviewCollection.insertOne(data);
+            res.send(result);
+        });
+
+
+        app.get('/reviews', async (req, res) => {
+            const result = await ReviewCollection.find().toArray()
+            res.send(result)
+        })
+
+
+        app.delete('/deletereview/:id', verifyToken, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }; // Ensure the ID is converted to ObjectId for MongoDB queries
+
+            try {
+                // Delete the portfolio document from MongoDB
+                const result = await ReviewCollection.deleteOne(query);
+
+                if (result.deletedCount === 0) {
+                    return res.status(404).send({ error: 'Portfolio not found' });
+                }
+
+                // Send success response
+                res.send({ message: 'Portfolio deleted successfully', result });
+            } catch (error) {
+                console.error('Error deleting portfolio:', error);
+                res.status(500).send({ error: 'Failed to delete portfolio' });
+            }
+        });
 
 
         // MongoDB Ping
