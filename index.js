@@ -65,6 +65,7 @@ async function run() {
         const servicesCollection = client.db('nusrat').collection("services");
         const experienceCollection = client.db('nusrat').collection("experience");
         const portfolioCollection = client.db('nusrat').collection("portfolio");
+        const SliderCollection = client.db('nusrat').collection("slider");
         const ReviewCollection = client.db('nusrat').collection("review");
 
 
@@ -294,6 +295,66 @@ async function run() {
                 res.status(500).send({ error: 'Failed to delete portfolio' });
             }
         });
+
+        // sliders
+        app.post('/addslider', verifyToken, verifyAdmin, async (req, res) => {
+            const data = req.body;
+            const result = await SliderCollection.insertOne(data);
+            res.send(result);
+        });
+
+        app.get('/sliders', async (req, res) => {
+            const result = await SliderCollection.find().toArray()
+            res.send(result)
+        })
+
+
+        app.put('/updateslider/:id', verifyToken, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const { _id, ...updatedData } = req.body; // Exclude `_id` from the update data
+        
+            try {
+                const result = await SliderCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: updatedData }
+                );
+        
+                if (result.modifiedCount === 0) {
+                    return res.status(404).send({ error: 'Slider not found or no changes made' });
+                }
+        
+                res.send({ message: 'Slider updated successfully', result });
+            } catch (error) {
+                console.error('Error updating slider:', error);
+                res.status(500).send({ error: 'Failed to update slider' });
+            }
+        });
+        
+        
+        
+        
+
+
+        app.delete('/deleteslider/:id', verifyToken, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }; // Ensure the ID is converted to ObjectId for MongoDB queries
+
+            try {
+                // Delete the portfolio document from MongoDB
+                const result = await SliderCollection.deleteOne(query);
+
+                if (result.deletedCount === 0) {
+                    return res.status(404).send({ error: 'Portfolio not found' });
+                }
+
+                // Send success response
+                res.send({ message: 'Portfolio deleted successfully', result });
+            } catch (error) {
+                console.error('Error deleting portfolio:', error);
+                res.status(500).send({ error: 'Failed to delete portfolio' });
+            }
+        });
+
 
         app.post('/addreview', verifyToken, verifyAdmin, async (req, res) => {
             const data = req.body;
