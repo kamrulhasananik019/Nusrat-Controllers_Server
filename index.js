@@ -62,11 +62,13 @@ async function run() {
     try {
         await client.connect();
         const usersCollection = client.db('nusrat').collection("users");
+        const ProfileCollection = client.db('nusrat').collection("profile");
         const servicesCollection = client.db('nusrat').collection("services");
         const experienceCollection = client.db('nusrat').collection("experience");
         const portfolioCollection = client.db('nusrat').collection("portfolio");
         const SliderCollection = client.db('nusrat').collection("slider");
         const ReviewCollection = client.db('nusrat').collection("review");
+
 
 
         app.post('/jwt', async (req, res) => {
@@ -199,6 +201,41 @@ async function run() {
             res.clearCookie('token', { maxAge: 0 }).send({ success: true });
         });
 
+
+
+        app.get('/getprofile', async (req, res) => {
+            try {
+                const result = await ProfileCollection.find().toArray();
+                res.send(result);
+            } catch (error) {
+                res.status(500).send('Error fetching profile.');
+            }
+        });
+
+
+
+
+        app.put('/updateprofile', async (req, res) => {
+            const { imageUrl, id } = req.body;  // Expect the _id to be passed in the request body
+
+            try {
+                // Find the document by _id and update the imageUrl
+                const updatedProfile = await ProfileCollection.updateOne(
+                    { _id: new ObjectId(id) },  // Convert the id to ObjectId
+                    { $set: { imageUrl } }
+                );
+
+                if (updatedProfile.modifiedCount === 1) {
+                    res.status(200).send('Profile image updated successfully.');
+                } else {
+                    res.status(404).send('Profile not found or already up-to-date.');
+                }
+            } catch (error) {
+                res.status(500).send('Error updating profile image.');
+            }
+        });
+
+
         app.post('/addexperience', verifyToken, verifyAdmin, async (req, res) => {
             const data = req.body;
             const result = await experienceCollection.insertOne(data);
@@ -312,27 +349,27 @@ async function run() {
         app.put('/updateslider/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const { _id, ...updatedData } = req.body; // Exclude `_id` from the update data
-        
+
             try {
                 const result = await SliderCollection.updateOne(
                     { _id: new ObjectId(id) },
                     { $set: updatedData }
                 );
-        
+
                 if (result.modifiedCount === 0) {
                     return res.status(404).send({ error: 'Slider not found or no changes made' });
                 }
-        
+
                 res.send({ message: 'Slider updated successfully', result });
             } catch (error) {
                 console.error('Error updating slider:', error);
                 res.status(500).send({ error: 'Failed to update slider' });
             }
         });
-        
-        
-        
-        
+
+
+
+
 
 
         app.delete('/deleteslider/:id', verifyToken, verifyAdmin, async (req, res) => {
